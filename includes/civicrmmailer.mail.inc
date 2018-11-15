@@ -48,7 +48,7 @@ class CiviCRMMailerMailSystem implements MailSystemInterface {
   public function mail(array $message) {
     civicrm_initialize();
 
-    $contact_id = 11042; // Myriam FIXME
+    $contact = NULL;
 
     // Drupal user emails are unique, so fetch the Drupal record
     // then we'll fetch the civicrm contact record.
@@ -56,17 +56,35 @@ class CiviCRMMailerMailSystem implements MailSystemInterface {
       ':mail' => $message['to'],
     ])->fetchField();
 
-    if (empty($uid)) {
-      throw new Exception("Could not find Drupal user for {$message['to']}");
+    if ($uid) {
+      $uf = civicrm_api3('UFMatch', 'getsingle', [
+        'uf_id' => $uid,
+      ]);
+
+      $contact = civicrm_api3('Contact', 'getsingle', [
+        'id' => $uf['contact_id'],
+      ]);
     }
 
-    $uf = civicrm_api3('UFMatch', 'getsingle', [
-      'uf_id' => $uid,
-    ]);
+    // The user might not exist. It could be a webform email.
+    // Find a matching email in CiviCRM, prioritize primary emails.
+    if (empty($contact)) {
+      $dao = CRM_Core_DAO::executeQuery('SELECT contact_id FROM civicrm_email WHERE email = %1 ORDER BY is_primary DESC', [
+        1 => [$message['to'], 'String'],
+      ]);
 
-    $contact = civicrm_api3('Contact', 'getsingle', [
-      'id' => $uf['contact_id'],
-    ]);
+      if ($dao->fetch()) {
+        $contact = civicrm_api3('Contact', 'getsingle', [
+          'id' => $dao->contact_id,
+        ]);
+      }
+    }
+
+    // FIXME: maybe return FALSE? for now, we prefer to get notifications
+    // when it fails.
+    if (empty($contact)) {
+      throw new Exception("Could not find Drupal user for {$message['to']}");
+    }
 
     $formattedContactDetails = [];
     $formattedContactDetails[] = $contact;
@@ -88,7 +106,7 @@ class CiviCRMMailerMailSystem implements MailSystemInterface {
       $message['body'], // text message
       $html_message, // html body
       NULL,
-      $default_org_id, // used for the "from"
+      $default_org_id // used for the "from"
     );
 
     return TRUE;
