@@ -1,0 +1,38 @@
+<?php
+
+/**
+ * @file
+ * Provides the installation routines for the civicrmmailer module
+ */
+
+/**
+ * Implementation of hook_enable().
+ */
+function civicrmmailer_enable() {
+  // The system default class.
+  $default_class = 'DefaultMailSystem';
+
+  // Load the current mail configuration.
+  $mail_system = variable_get('mail_system', array('default-system' => $default_class));
+  $mail_system['civicrmmailer'] = 'CiviCRMMailerMailSystem';
+
+  // Take over the default
+  $mail_system['default-system'] = $mail_system['civicrmmailer'];
+  variable_set('mail_system', $mail_system);
+
+  drupal_set_message(t('The CiviCRM Mailer module was set as the default email system.'));
+}
+
+/**
+ * Implementation of hook_disable().
+ */
+function civicrmmailer_disable() {
+  // Set the default back to DefaultMailSystem
+  $default_class = 'DefaultMailSystem';
+  $mail_system = variable_get('mail_system', array('default-system' => $default_class));
+  $mail_system['default-system'] = $default_class;
+
+  variable_set('mail_system', $mail_system);
+
+  drupal_set_message(t('The DefaultMailSystem module was set as the default email system.'));
+}

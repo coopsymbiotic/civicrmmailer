@@ -1,0 +1,6 @@
+name = CiviCRM Mailer
+description = Sends and logs Drupal mails in CiviCRM
+package = Mail
+core = 7.x
+
+files[] = includes/civicrmmailer.mail.inc
