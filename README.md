@@ -18,3 +18,21 @@ Why?
 Needs testing:
 
 * Webform emails (to and cc).
+
+Support
+-------
+
+Please post bug reports in the issue tracker of this project on github: 
+https://github.com/coopsymbiotic/civicrmmailer/issues
+
+Commercial support via Coop SymbioTIC:  
+https://www.symbiotic.coop/en
+
+License
+-------
+
+(C) 2018 Mathieu Lutfy <mathieu@symbiotic.coop>  
+(C) 2018 Coop SymbioTIC <info@symbiotic.coop>
+
+Distributed under the terms of the GNU Affero General public license (AGPL).
+See LICENSE.txt for details.
