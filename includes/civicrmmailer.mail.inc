@@ -48,12 +48,23 @@ class CiviCRMMailerMailSystem implements MailSystemInterface {
   public function mail(array $message) {
     civicrm_initialize();
 
+    $addresses = Mail_RFC822::parseAddressList($message['to']);
+
+    foreach ($addresses as $a) {
+      $recipient = $a->mailbox . '@' . $a->host;
+      $this->mailSingle($message, $recipient);
+    }
+
+    return TRUE;
+  }
+
+  private function mailSingle(array $message, string $recipient) {
     $contact = NULL;
 
     // Drupal user emails are unique, so fetch the Drupal record
     // then we'll fetch the civicrm contact record.
     $uid = db_query('SELECT uid FROM {users} WHERE mail = :mail', [
-      ':mail' => $message['to'],
+      ':mail' => $recipient,
     ])->fetchField();
 
     if ($uid) {
@@ -77,7 +88,7 @@ class CiviCRMMailerMailSystem implements MailSystemInterface {
     // Find a matching email in CiviCRM, prioritize primary emails.
     if (empty($contact)) {
       $dao = CRM_Core_DAO::executeQuery('SELECT contact_id FROM civicrm_email WHERE email = %1 ORDER BY is_primary DESC', [
-        1 => [$message['to'], 'String'],
+        1 => [$recipient, 'String'],
       ]);
 
       if ($dao->fetch()) {
@@ -90,7 +101,7 @@ class CiviCRMMailerMailSystem implements MailSystemInterface {
     // FIXME: maybe return FALSE? for now, we prefer to get notifications
     // when it fails.
     if (empty($contact)) {
-      throw new Exception("Could not find Drupal user for {$message['to']}");
+      throw new Exception("Could not find Drupal user for {$recipient}");
     }
 
     $formattedContactDetails = [];
